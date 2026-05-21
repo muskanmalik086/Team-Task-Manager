@@ -1,0 +1,763 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Team Task Manager API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: projects
+    description: Project management
+  - name: tasks
+    description: Task management
+  - name: dashboard
+    description: Dashboard and analytics
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects (admin sees all, members see assigned)
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project by ID with members and tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{id}/members:
+    post:
+      operationId: addProjectMember
+      tags: [projects]
+      summary: Add a member to a project (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberInput"
+      responses:
+        "201":
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectMember"
+        "409":
+          description: Already a member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{id}/members/{userId}:
+    delete:
+      operationId: removeProjectMember
+      tags: [projects]
+      summary: Remove a member from a project (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Member removed
+
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List tasks (admin sees all, members see assigned)
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [todo, in_progress, completed]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high]
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a task (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      tags: [tasks]
+      summary: Get a task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task (admin can update all, member can only update status of assigned tasks)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard stats (admin sees all, member sees own)
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [auth]
+      summary: List all users (admin only, for member assignment)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - role
+        - createdAt
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+
+    SignupInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [admin, member]
+      required:
+        - name
+        - email
+        - password
+
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, completed, on_hold]
+        createdById:
+          type: integer
+        createdByName:
+          type: string
+        totalTasks:
+          type: integer
+        completedTasks:
+          type: integer
+        memberCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - status
+        - createdById
+        - createdByName
+        - totalTasks
+        - completedTasks
+        - memberCount
+        - createdAt
+
+    ProjectDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, completed, on_hold]
+        createdById:
+          type: integer
+        createdByName:
+          type: string
+        totalTasks:
+          type: integer
+        completedTasks:
+          type: integer
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectMember"
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - status
+        - createdById
+        - createdByName
+        - totalTasks
+        - completedTasks
+        - members
+        - tasks
+        - createdAt
+
+    ProjectInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, on_hold]
+      required:
+        - title
+
+    ProjectUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, on_hold]
+
+    ProjectMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        projectId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+        joinedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - projectId
+        - name
+        - email
+        - role
+        - joinedAt
+
+    MemberInput:
+      type: object
+      properties:
+        userId:
+          type: integer
+      required:
+        - userId
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: ["string", "null"]
+        isOverdue:
+          type: boolean
+        projectId:
+          type: integer
+        projectTitle:
+          type: string
+        assignedToId:
+          type: ["integer", "null"]
+        assignedToName:
+          type: ["string", "null"]
+        createdById:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - status
+        - priority
+        - isOverdue
+        - projectId
+        - projectTitle
+        - createdById
+        - createdAt
+
+    TaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: string
+        projectId:
+          type: integer
+        assignedToId:
+          type: integer
+      required:
+        - title
+        - projectId
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: string
+        assignedToId:
+          type: integer
+
+    DashboardData:
+      type: object
+      properties:
+        totalProjects:
+          type: integer
+        totalTasks:
+          type: integer
+        completedTasks:
+          type: integer
+        inProgressTasks:
+          type: integer
+        todoTasks:
+          type: integer
+        overdueTasks:
+          type: integer
+        recentTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        projectSummaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+      required:
+        - totalProjects
+        - totalTasks
+        - completedTasks
+        - inProgressTasks
+        - todoTasks
+        - overdueTasks
+        - recentTasks
+        - projectSummaries

@@ -1,0 +1,191 @@
+Build a complete full-stack web app called “Team Task Manager” for my assignment.
+
+Goal:
+Create a live, fully functional web application where users can create projects, manage teams, assign tasks, and track progress using role-based access control with two roles: Admin and Member.
+
+Tech stack:
+Use a simple production-ready full-stack setup:
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Database: PostgreSQL
+- ORM: Prisma
+- Authentication: JWT + bcrypt password hashing
+- Styling: clean responsive CSS or Tailwind
+- Deployment-ready for Railway
+
+Core features:
+
+1. Authentication
+- Signup
+- Login
+- Logout
+- Passwords must be hashed with bcrypt
+- JWT-based authentication
+- Protected routes
+- Show logged-in user name and role in the UI
+
+2. Role-based access control
+Admin users can:
+- Create projects
+- Edit/delete projects
+- Add team members to projects
+- Create tasks
+- Assign tasks to team members
+- Update any task
+- View all projects and team progress
+
+Member users can:
+- View only projects they are assigned to
+- View their assigned tasks
+- Update task status only for tasks assigned to them
+- Cannot create/delete projects
+- Cannot manage users or assign tasks
+
+3. Project management
+Each project should include:
+- Project title
+- Description
+- Created by admin
+- Team members
+- Created date
+- Project status/progress based on task completion
+
+4. Team management
+- Admin can add existing users to a project
+- Show project members on the project detail page
+- Prevent duplicate members in the same project
+
+5. Task management
+Each task should include:
+- Title
+- Description
+- Assigned user
+- Project
+- Status: Todo, In Progress, Completed
+- Priority: Low, Medium, High
+- Due date
+- Created date
+- Overdue indicator if due date has passed and task is not completed
+
+6. Dashboard
+Create a dashboard showing:
+- Total projects
+- Total tasks
+- Completed tasks
+- In-progress tasks
+- Overdue tasks
+- Task status summary
+- Recent tasks
+- For Admin: show all project/task stats
+- For Member: show only their assigned work
+
+7. Validations and relationships
+Implement proper backend validation:
+- Required fields
+- Valid email format
+- Unique email for users
+- Valid task status and priority
+- Due date validation
+- Prevent unauthorized access
+- Proper database relationships between User, Project, ProjectMember, and Task
+
+8. REST API
+Create clean REST APIs such as:
+- POST /api/auth/signup
+- POST /api/auth/login
+- GET /api/auth/me
+- GET /api/projects
+- POST /api/projects
+- GET /api/projects/:id
+- PUT /api/projects/:id
+- DELETE /api/projects/:id
+- POST /api/projects/:id/members
+- GET /api/tasks
+- POST /api/tasks
+- PUT /api/tasks/:id
+- DELETE /api/tasks/:id
+- GET /api/dashboard
+
+9. UI pages
+Create these pages:
+- Landing/Login page
+- Signup page
+- Dashboard page
+- Projects list page
+- Project details page
+- Create/Edit project form
+- Create/Edit task form
+- My Tasks page
+- Unauthorized/404 page
+
+10. Design requirements
+- Make the UI modern, clean, and responsive
+- Use cards, tables, badges, and status colors
+- Add loading states and error messages
+- Add confirmation before delete actions
+- Make it usable on mobile and desktop
+
+11. Demo data
+Add a seed script that creates:
+- One admin user
+- Two member users
+- Two sample projects
+- Several sample tasks with different statuses and due dates
+
+Use these demo credentials:
+Admin:
+email: admin@example.com
+password: Admin123!
+
+Member:
+email: member@example.com
+password: Member123!
+
+12. Project structure
+Create a clean folder structure:
+- client/
+- server/
+- prisma/
+- README.txt
+- .env.example
+
+13. Railway deployment
+Make the project ready to deploy on Railway.
+Include:
+- Correct start scripts
+- Environment variable instructions
+- DATABASE_URL usage
+- JWT_SECRET usage
+- Build command
+- Start command
+- Clear README deployment steps
+
+14. README.txt
+Create a README.txt file containing:
+- Project title
+- Short description
+- Features list
+- Tech stack
+- How to run locally
+- Environment variables
+- Database setup steps
+- Seed data instructions
+- Demo login credentials
+- Railway deployment instructions
+- API endpoint summary
+
+15. Quality expectations
+- The app must run without errors
+- All buttons/forms should work
+- Authentication and authorization must be functional
+- Database relationships must be correct
+- Code should be clean and understandable
+- Do not leave placeholder pages
+- Do not use mock-only frontend data; connect the frontend to the backend APIs
+- Make sure the final app is deployable and suitable for submission
+
+After building, give me:
+1. Live application deployment steps for Railway
+2. GitHub repository preparation steps
+3. The README.txt content
+4. A short 2–5 minute demo video script explaining the app
